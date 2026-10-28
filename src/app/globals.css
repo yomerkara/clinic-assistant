@@ -9013,3 +9013,31 @@ body:has(.page-loading-overlay) .admin-shell { filter:blur(5px); }
 .thread-unread { color:#28644e; font-size:12px; font-weight:700; border-top:2px solid #9dbfae; padding-top:12px; margin-bottom:12px; }
 .desk-sidebar { min-width:0; border-left:1px solid #dce7e1; }
 .desk-sidebar .desk-decision { border-left:0; }
+
+/* Control screen: one switch per row, legible on a phone. */
+.control-flag-list {
+  display: grid;
+  gap: 10px;
+}
+.control-flag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e3e9e4;
+  border-radius: 10px;
+  background: #fff;
+}
+.control-flag > span:first-child {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 2px;
+}
+.control-flag b {
+  font-size: 14px;
+}
+.control-flag small {
+  color: #5e6a63;
+  font-size: 11px;
+}

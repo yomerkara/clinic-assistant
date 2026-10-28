@@ -8,7 +8,7 @@ import cases from "./ui-100-cases.mjs";
 import { runInvariants } from "./ui-invariants.mjs";
 
 const out = process.env.UI_OUT || "artifacts/ui-100-20261027";
-const origin = "https://localhost";
+const origin = process.env.UI_ORIGIN || "https://localhost";
 fs.mkdirSync(out, { recursive: true });
 const results = fs.existsSync(out + "/results.json")
   ? JSON.parse(fs.readFileSync(out + "/results.json"))
@@ -18,7 +18,7 @@ const to = Number(process.argv[3] || 100);
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
-  storageState: "/tmp/santa-audit-user_admin.json",
+  storageState: process.env.UI_STATE || "/tmp/santa-audit-user_admin.json",
   viewport: { width: 1440, height: 1100 },
 });
 const page = await context.newPage();
@@ -64,6 +64,7 @@ function judge(reply, checks, r, label) {
     r.issues.push(`İstenmeyen yanıt (${checks.not}): ${label}`);
 }
 async function send(text, r, checks = {}, burst = false) {
+  const skipEmptyCheck = Boolean(checks.skipEmptyCheck);
   const prev = state?.conversation?.messages?.length || 0;
   const post = page.waitForResponse(
     (x) => x.url().endsWith("/api/demo") && x.request().method() === "POST",
@@ -88,12 +89,16 @@ async function send(text, r, checks = {}, burst = false) {
     reply,
     mode: state.conversation.mode,
     latencyMs: Date.now() - r.stepStart,
+    ...(skipEmptyCheck ? { skipEmptyCheck } : {}),
   });
+  r.queueSeen = [...(r.queueSeen ?? []), ...(state?.actions ?? [])];
   judge(reply, checks, r, text);
   return reply;
 }
 async function approve(r, type = "Yeni randevu") {
   if (!r.actionsBeforeApproval) r.actionsBeforeApproval = state?.actions ?? [];
+  // Every queue entry this scenario produced, including ones approve() resolves.
+  r.queueSeen = [...(r.queueSeen ?? []), ...(state?.actions ?? [])];
   const link = page.locator('a[href^="/queue/"]').filter({ hasText: type }).first();
   if (!(await link.count())) {
     r.issues.push(type + " onay talebi UI’da oluşmadı");
@@ -139,7 +144,10 @@ try {
   await page.goto(origin + "/demo?persona=new");
   if (page.url().includes("/login")) throw Error("Oturum yok");
   await until(() => state?.conversation, "demo ilk durum", 15000);
-  for (const c of cases.filter((x) => Number(x.id) >= from && Number(x.id) <= to)) {
+  const only = process.env.UI_ONLY?.split(",").map((v) => v.trim());
+  for (const c of cases.filter((x) =>
+    only ? only.includes(x.id) : Number(x.id) >= from && Number(x.id) <= to,
+  )) {
     if (results.some((r) => r.id === c.id)) continue;
     const r = {
       ...c,
@@ -259,7 +267,12 @@ try {
         r.issues.push("Takvim servisi erişim engeli");
         r.blocked = true;
       }
-      r.actions = state?.actions;
+      r.queueSeen = [...(r.queueSeen ?? []), ...(state?.actions ?? [])];
+      // Deduplicated queue entries seen at any point, so a check does not depend
+      // on what happens to still be pending at the end of the scenario.
+      r.actions = [
+        ...new Map(r.queueSeen.map((a) => [a.id ?? `${a.type}:${a.status}`, a])).values(),
+      ];
       r.patient = state?.patient
         ? {
             displayName: state.patient.displayName,

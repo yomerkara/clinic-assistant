@@ -1,4 +1,9 @@
 import { operationalSupport } from "@/lib/conversation/operational-support";
+import {
+  ASSISTANT_OFF_REPLY,
+  assistantOffHandoffReason,
+} from "@/lib/settings/control";
+import { loadClinicControls } from "@/lib/settings/service";
 import { serviceFailureReply } from "@/lib/conversation/service-failure";
 import {
   CALENDAR_FAILURE_REPLY,
@@ -354,6 +359,45 @@ export async function handleInbound(input: {
           text,
         },
       });
+
+  // Operator shutdown: no model call, no action, no promise of a time. The
+  // conversation moves to staff exactly as a security handoff would.
+  const controls = await loadClinicControls();
+  if (!controls.assistantEnabled) {
+    const diagnosis = buildHumanRequestDiagnosis({
+      inbound: text,
+      now,
+      model: "assistant-disabled-v1",
+    });
+    diagnosis.intentLabel = "Asistan kapalı";
+    diagnosis.promptVersion = "assistant-disabled-v1";
+    diagnosis.provider = "fake";
+    diagnosis.outbound = ASSISTANT_OFF_REPLY;
+    diagnosis.action = null;
+    diagnosis.botStopped = true;
+    diagnosis.handoff = { reason: assistantOffHandoffReason(controls.assistantOffReason) };
+    diagnosis.rules = ["Asistan kapalı; otomatik yanıt ve işlem üretilmedi."];
+    await persistOutbound(conversation.id, inboundMessage.id, diagnosis);
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { mode: "HUMAN", handoffReason: diagnosis.handoff.reason },
+    });
+    await prisma.auditEvent.create({
+      data: {
+        action: "assistant.disabled_handoff",
+        entityType: "Message",
+        entityId: inboundMessage.id,
+        metadata: { reason: controls.assistantOffReason },
+      },
+    });
+    return finish({
+      diagnosis,
+      conversationId: conversation.id,
+      patientId: patient.id,
+      actionId: null,
+      hasAppointment: false,
+    });
+  }
 
   const security = securityHandoff(text);
   if (security && !isCrisisMessage(text)) {

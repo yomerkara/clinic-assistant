@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { roleLabel } from "@/lib/format";
 import { AdminNavIcon } from "@/components/AdminIcons";
+import { loadClinicControls } from "@/lib/settings/service";
 
 type Props = {
   user: { name: string; role: string };
@@ -25,16 +26,20 @@ type Props = {
 };
 
 const nav = [
-  { key: "queue", href: "/queue", label: "Onay kuyruğu", icon: "check" },
-  { key: "conversations", href: "/conversations", label: "Konuşmalar", icon: "chat" },
-  { key: "patients", href: "/patients", label: "Müşteriler", icon: "users" },
-  { key: "calendar", href: "/calendar", label: "Takvim", icon: "calendar" },
-  { key: "requests", href: "/requests", label: "Çalışan talepleri", icon: "check" },
-  { key: "invoices", href: "/invoices", label: "Faturalar", icon: "chart" },
+  // The approval queue is the product's core and has no switch.
+  { key: "queue", href: "/queue", label: "Onay kuyruğu", icon: "check", flag: null },
+  { key: "conversations", href: "/conversations", label: "Konuşmalar", icon: "chat", flag: "screen.conversations" },
+  { key: "patients", href: "/patients", label: "Müşteriler", icon: "users", flag: "screen.patients" },
+  { key: "calendar", href: "/calendar", label: "Takvim", icon: "calendar", flag: "screen.calendar" },
+  { key: "requests", href: "/requests", label: "Çalışan talepleri", icon: "check", flag: "screen.requests" },
+  { key: "invoices", href: "/invoices", label: "Faturalar", icon: "chart", flag: "screen.invoices" },
 ] as const;
 
 export async function AdminShell({ user, active, pendingCount = 0, children }: Props) {
+  // A flag can hide a screen the role already allows; it never grants access.
+  const { flags, assistantEnabled } = await loadClinicControls();
   const visibleNav = nav.filter((item) => {
+    if (item.flag && !flags[item.flag]) return item.key === active;
     if (item.key === "calendar")
       return user.role === "ADMIN" || user.role === "THERAPIST";
     return true;
@@ -148,6 +153,17 @@ export async function AdminShell({ user, active, pendingCount = 0, children }: P
             </Link>
           ))}
         </nav>
+        {!assistantEnabled && (
+          <div className="onboarding-error" role="status">
+            Asistan kapalı: gelen mesajlar otomatik yanıtlanmıyor, konuşmalar
+            çalışana aktarılıyor.{" "}
+            {user.role === "ADMIN" ? (
+              <Link className="admin-inline-action" href="/control">
+                Kontrol ekranı
+              </Link>
+            ) : null}
+          </div>
+        )}
         {(await isSetupDeferred()) && (
           <div className="onboarding-error" role="status">
             Yerel önizleme: kurulum ertelendi.{" "}
