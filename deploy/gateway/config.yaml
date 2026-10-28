@@ -1,0 +1,316 @@
+{
+  "model_list": [
+    {
+      "model_name": "qwen-3.6-35b-sovereign",
+      "litellm_params": {
+        "model": "openai/qwen-3.6-35b-sovereign",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "deepseek-v4-flash-sovereign",
+      "litellm_params": {
+        "model": "openai/deepseek-v4-flash-sovereign",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-5-5",
+      "litellm_params": {
+        "model": "openai/claude-opus-5-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-5",
+      "litellm_params": {
+        "model": "openai/claude-opus-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-4-5",
+      "litellm_params": {
+        "model": "openai/claude-opus-4-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-sonnet-4-5",
+      "litellm_params": {
+        "model": "openai/claude-sonnet-4-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-haiku-4-5",
+      "litellm_params": {
+        "model": "openai/claude-haiku-4-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-4-6",
+      "litellm_params": {
+        "model": "openai/claude-opus-4-6",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-sonnet-4-6",
+      "litellm_params": {
+        "model": "openai/claude-sonnet-4-6",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-sonnet-5-5",
+      "litellm_params": {
+        "model": "openai/claude-sonnet-5-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-sonnet-5",
+      "litellm_params": {
+        "model": "openai/claude-sonnet-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-4-7",
+      "litellm_params": {
+        "model": "openai/claude-opus-4-7",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-opus-4-8",
+      "litellm_params": {
+        "model": "openai/claude-opus-4-8",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-fable-5-1",
+      "litellm_params": {
+        "model": "openai/claude-fable-5-1",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gemini-3.5-flash",
+      "litellm_params": {
+        "model": "openai/gemini-3.5-flash",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gemini-3.6-flash",
+      "litellm_params": {
+        "model": "openai/gemini-3.6-flash",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gemini-3.7-flash",
+      "litellm_params": {
+        "model": "openai/gemini-3.7-flash",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gemini-3.8-flash",
+      "litellm_params": {
+        "model": "openai/gemini-3.8-flash",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gemini-3.5-flash-lite",
+      "litellm_params": {
+        "model": "openai/gemini-3.5-flash-lite",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "google/gemma-4-31b-it",
+      "litellm_params": {
+        "model": "openai/google/gemma-4-31b-it",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "llama-3-3-70b",
+      "litellm_params": {
+        "model": "openai/llama-3-3-70b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "qwen3.8-27b",
+      "litellm_params": {
+        "model": "openai/qwen3.8-27b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-5-nano",
+      "litellm_params": {
+        "model": "openai/gpt-5-nano",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-5.6-sol",
+      "litellm_params": {
+        "model": "openai/gpt-5.6-sol",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-5.6-terra",
+      "litellm_params": {
+        "model": "openai/gpt-5.6-terra",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-5.6-luna",
+      "litellm_params": {
+        "model": "openai/gpt-5.6-luna",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-6-sol",
+      "litellm_params": {
+        "model": "openai/gpt-6-sol",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-6.1-sol",
+      "litellm_params": {
+        "model": "openai/gpt-6.1-sol",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-6-luna",
+      "litellm_params": {
+        "model": "openai/gpt-6-luna",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-oss-120b",
+      "litellm_params": {
+        "model": "openai/gpt-oss-120b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "gpt-oss-20b",
+      "litellm_params": {
+        "model": "openai/gpt-oss-20b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "qwen3-coder-480b",
+      "litellm_params": {
+        "model": "openai/qwen3-coder-480b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "qwen3-235b",
+      "litellm_params": {
+        "model": "openai/qwen3-235b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "devstral-2-123b",
+      "litellm_params": {
+        "model": "openai/devstral-2-123b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "nemotron-3-super-120b",
+      "litellm_params": {
+        "model": "openai/nemotron-3-super-120b",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "nova-2-lite",
+      "litellm_params": {
+        "model": "openai/nova-2-lite",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    },
+    {
+      "model_name": "claude-haiku-5-5",
+      "litellm_params": {
+        "model": "openai/claude-haiku-5-5",
+        "api_base": "os.environ/SANTA_PROVIDER_BASE",
+        "api_key": "os.environ/SANTA_PROVIDER_KEY"
+      }
+    }
+  ],
+  "general_settings": {
+    "master_key": "os.environ/LITELLM_MASTER_KEY"
+  },
+  "litellm_settings": {
+    "callbacks": [
+      "hooks.proxy_handler_instance"
+    ],
+    "set_verbose": false,
+    "turn_off_message_logging": true,
+    "success_callback": [],
+    "failure_callback": []
+  },
+  "router_settings": {
+    "num_retries": 0,
+    "timeout": 25
+  }
+}

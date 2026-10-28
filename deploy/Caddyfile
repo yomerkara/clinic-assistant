@@ -1,0 +1,33 @@
+{
+	skip_install_trust
+	pki {
+		ca santa-development {
+			name "Santa Development Localhost CA"
+			root {
+				cert /certs/root.crt
+				key /certs/root.key
+			}
+		}
+	}
+}
+
+https://localhost {
+	tls {
+		issuer internal {
+			ca santa-development
+		}
+	}
+	encode zstd gzip
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+	@internalJobs path /api/jobs/*
+	respond @internalJobs 404
+	reverse_proxy app:3000
+}
+
+http://localhost:3000 {
+	redir https://localhost{uri} permanent
+}

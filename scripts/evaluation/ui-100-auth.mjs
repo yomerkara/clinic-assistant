@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {chromium} from '../screenshot/node_modules/playwright/index.mjs';
+const code=`const {PrismaClient}=require('@prisma/client'); const {randomBytes,scryptSync}=require('crypto'); const p=new PrismaClient(); (async()=>{const u=await p.user.findFirstOrThrow({where:{role:'ADMIN',active:true}});const token=randomBytes(32).toString('hex');const hash=scryptSync(token,'session',32).toString('hex');await p.session.create({data:{userId:u.id,tokenHash:hash,expiresAt:new Date(Date.now()+86400000)}});console.log(JSON.stringify({token,hash}));})().finally(()=>p.$disconnect());`;
+const {token,hash}=JSON.parse(execFileSync('docker',['compose','exec','-T','app','node','-e',code],{encoding:'utf8'}));
+const browser=await chromium.launch();
+const context=await browser.newContext({ignoreHTTPSErrors:true});
+await context.addCookies([{name:'santa_session',value:token,url:'https://localhost',httpOnly:true,secure:true,sameSite:'Lax'},{name:'santa_setup_deferred',value:hash,url:'https://localhost',httpOnly:true,secure:true,sameSite:'Lax'}]);
+const page=await context.newPage();await page.goto('https://localhost/demo');
+console.log('URL',page.url()); console.log((await page.locator('body').innerText()).slice(0,1800));
+await context.storageState({path:'/tmp/santa-ui-100-auth.json'});fs.chmodSync('/tmp/santa-ui-100-auth.json',0o600);
+await page.screenshot({path:'artifacts/ui-100-20261014/demo-initial.png'});
+await browser.close();

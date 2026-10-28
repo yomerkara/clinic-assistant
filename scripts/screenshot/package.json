@@ -1,0 +1,9 @@
+{
+  "name": "design-pipeline-screenshot",
+  "private": true,
+  "type": "module",
+  "description": "Isolated Playwright install for visually rendering generated mockups, kept out of the consumer project's own package.json.",
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

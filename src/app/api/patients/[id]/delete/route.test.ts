@@ -1,0 +1,15 @@
+import { beforeEach, expect, it, vi } from "vitest";
+const d=vi.hoisted(()=>({user:vi.fn(),find:vi.fn(),erase:vi.fn()}));
+vi.mock("@/lib/auth/session",()=>({requireUser:d.user}));
+vi.mock("@/lib/prisma",()=>({prisma:{patient:{findUnique:d.find}}}));
+vi.mock("@/lib/queue/ports",()=>({getCalendar:()=>({})}));
+vi.mock("@/lib/patients/privacy",()=>({erasePatientData:d.erase}));
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+import { POST } from "./route";
+const call=(fields={confirmation:"SİL",reviewed:"yes"})=>POST(new Request("http://localhost/api/patients/p/delete",{method:"POST",body:new URLSearchParams(fields)}),{params:Promise.resolve({id:"p"})});
+beforeEach(()=>{vi.clearAllMocks();d.user.mockResolvedValue({id:"a",role:"ADMIN"});d.find.mockResolvedValue({id:"p"});d.erase.mockResolvedValue({erased:true});});
+it.each(["THERAPIST","INTERN"])("denies deletion for %s",async role=>{d.user.mockResolvedValue({id:"u",role});expect((await call()).status).toBe(403);expect(d.erase).not.toHaveBeenCalled();});
+it("requires deliberate confirmation",async()=>{expect((await call({confirmation:"sil",reviewed:"yes"})).status).toBe(400);expect(d.erase).not.toHaveBeenCalled();});
+it("returns missing record safely",async()=>{d.find.mockResolvedValue(null);expect((await call()).status).toBe(404);expect(d.erase).not.toHaveBeenCalled();});
+it("uses the existing privacy erasure flow",async()=>{expect((await call()).status).toBe(200);expect(d.erase).toHaveBeenCalledWith(expect.anything(),{},"p","a");});
+it("shows a blocking explanation and does not leak internal errors",async()=>{d.erase.mockRejectedValueOnce(new Error("Önce aktif randevuları ve bekleyen talepleri sonuçlandırın."));expect((await (await call()).json()).error).toContain("aktif randevuları");d.erase.mockRejectedValueOnce(new Error("database secret"));const r=await call();expect(r.status).toBe(409);expect(JSON.stringify(await r.json())).not.toContain("secret");});

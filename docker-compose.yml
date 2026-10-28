@@ -1,0 +1,252 @@
+services:
+  gateway:
+    image: ghcr.io/berriai/litellm@sha256:3d88bd757134a00e8c00237b85a021ab1f6d54abb9c1df750f411dbe7256a500
+    profiles: ["ai-gateway"]
+    restart: unless-stopped
+    command: ["--config", "/gateway/config.yaml", "--port", "4000"]
+    ports:
+      - "127.0.0.1:4001:4000"
+    volumes:
+      - ./deploy/gateway:/gateway:ro
+    environment:
+      PYTHONPATH: /gateway
+      LITELLM_MASTER_KEY: ${AI_GATEWAY_KEY:-}
+      SANTA_PROVIDER_KEY: ${OPENAI_API_KEY:-${LLM_API_KEY:-}}
+      SANTA_PROVIDER_BASE: ${LLM_BASE_URL:-${LLM_API_BASE:-}}
+      LITELLM_LOG: ERROR
+      LITELLM_TELEMETRY: "false"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["sh", "/tls-config/start-postgres.sh"]
+    environment:
+      POSTGRES_USER: santa
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_DB: santa
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/db/tls:/tls-config:ro
+      - ${DB_TLS_DIR:-./.local/db-tls}/server.crt:/certs/server.crt:ro
+      - ${DB_TLS_DIR:-./.local/db-tls}/server.key:/certs/server.key:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U santa -d santa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-provision:
+    image: postgres:16-alpine
+    entrypoint: ["sh", "/provision/provision.sh"]
+    volumes:
+      - ./scripts/db:/provision:ro
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    environment:
+      PGSSLMODE: verify-full
+      PGSSLROOTCERT: /certs/ca.crt
+      PGHOST: db
+      PGUSER: santa
+      PGDATABASE: santa
+      POSTGRES_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD}
+      APP_DATABASE_PASSWORD: ${APP_DATABASE_PASSWORD:?Set a separate 64-character hex APP_DATABASE_PASSWORD}
+      MIGRATION_DATABASE_PASSWORD: ${MIGRATION_DATABASE_PASSWORD:?Set a separate 64-character hex MIGRATION_DATABASE_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    volumes:
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    environment:
+      DATABASE_URL: postgresql://santa_migrate:${MIGRATION_DATABASE_PASSWORD:?Set MIGRATION_DATABASE_PASSWORD}@db:5432/santa?sslmode=require&sslaccept=strict&sslcert=/certs/ca.crt
+    depends_on:
+      db-provision:
+        condition: service_completed_successfully
+    restart: "no"
+
+  app:
+    image: santa-development-app:local
+    build:
+      context: .
+      target: runner
+    volumes:
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    expose:
+      - "3000"
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://santa_app:${APP_DATABASE_PASSWORD:?Set APP_DATABASE_PASSWORD}@db:5432/santa?sslmode=require&sslaccept=strict&sslcert=/certs/ca.crt
+      SESSION_SECRET: ${SESSION_SECRET:?Set a separate random SESSION_SECRET of at least 32 characters}
+      APP_URL: ${APP_URL:-https://localhost}
+      ALLOW_LOCAL_SETUP_SKIP: ${ALLOW_LOCAL_SETUP_SKIP:-false}
+      APP_TIMEZONE: Europe/Istanbul
+      CONVERSATION_FLOW: ${CONVERSATION_FLOW:-legacy}
+      CONTEXT_REVIEW: ${CONTEXT_REVIEW:-off}
+      CONTEXT_REVIEW_EXAMPLES: ${CONTEXT_REVIEW_EXAMPLES:-on}
+      AI_GATEWAY: ${AI_GATEWAY:-direct}
+      AI_GATEWAY_URL: http://gateway:4000/v1
+      AI_GATEWAY_KEY: ${AI_GATEWAY_KEY:-}
+      AI_UNDERSTAND_MODE: ${AI_UNDERSTAND_MODE:-off}
+      AI_UNDERSTAND_MODEL: ${AI_UNDERSTAND_MODEL:-}
+      AI_ANSWER_MODEL: ${AI_ANSWER_MODEL:-}
+      AI_REVIEW_MODEL: ${AI_REVIEW_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: deepseek-v4-flash-sovereign
+      LLM_INPUT_USD_PER_MILLION: ${LLM_INPUT_USD_PER_MILLION:-0}
+      LLM_OUTPUT_USD_PER_MILLION: ${LLM_OUTPUT_USD_PER_MILLION:-0}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_BASE: ${LLM_API_BASE:-}
+      CLINIC_EMERGENCY_TEXT: ${CLINIC_EMERGENCY_TEXT:-}
+      GOOGLE_LOCAL_OAUTH_ORIGIN: ${GOOGLE_LOCAL_OAUTH_ORIGIN:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      AUTH_MAIL_FROM: ${AUTH_MAIL_FROM:-}
+      AI_BALANCED_MODEL: ${AI_BALANCED_MODEL:-}
+      AI_BALANCED_TARIFF_VERSION: ${AI_BALANCED_TARIFF_VERSION:-}
+      AI_BALANCED_PROVIDER_INPUT_USD: ${AI_BALANCED_PROVIDER_INPUT_USD:-}
+      AI_BALANCED_PROVIDER_OUTPUT_USD: ${AI_BALANCED_PROVIDER_OUTPUT_USD:-}
+      AI_BALANCED_CUSTOMER_INPUT_USD: ${AI_BALANCED_CUSTOMER_INPUT_USD:-}
+      AI_BALANCED_CUSTOMER_OUTPUT_USD: ${AI_BALANCED_CUSTOMER_OUTPUT_USD:-}
+      PASSWORD_ROTATION_MONTHS: ${PASSWORD_ROTATION_MONTHS:-6}
+      AI_TIER: ${AI_TIER:-BALANCED}
+      AI_ECONOMY_MODEL: ${AI_ECONOMY_MODEL:-}
+      AI_ECONOMY_TARIFF_VERSION: ${AI_ECONOMY_TARIFF_VERSION:-}
+      AI_ECONOMY_PROVIDER_INPUT_USD: ${AI_ECONOMY_PROVIDER_INPUT_USD:-}
+      AI_ECONOMY_PROVIDER_OUTPUT_USD: ${AI_ECONOMY_PROVIDER_OUTPUT_USD:-}
+      AI_ECONOMY_CUSTOMER_INPUT_USD: ${AI_ECONOMY_CUSTOMER_INPUT_USD:-}
+      AI_ECONOMY_CUSTOMER_OUTPUT_USD: ${AI_ECONOMY_CUSTOMER_OUTPUT_USD:-}
+      AI_ADVANCED_MODEL: ${AI_ADVANCED_MODEL:-}
+      AI_ADVANCED_TARIFF_VERSION: ${AI_ADVANCED_TARIFF_VERSION:-}
+      AI_ADVANCED_PROVIDER_INPUT_USD: ${AI_ADVANCED_PROVIDER_INPUT_USD:-}
+      AI_ADVANCED_PROVIDER_OUTPUT_USD: ${AI_ADVANCED_PROVIDER_OUTPUT_USD:-}
+      AI_ADVANCED_CUSTOMER_INPUT_USD: ${AI_ADVANCED_CUSTOMER_INPUT_USD:-}
+      AI_ADVANCED_CUSTOMER_OUTPUT_USD: ${AI_ADVANCED_CUSTOMER_OUTPUT_USD:-}
+      REMINDER_JOB_SECRET: ${REMINDER_JOB_SECRET:?Set a separate random REMINDER_JOB_SECRET of at least 32 characters}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  reminders:
+    image: santa-development-app:local
+    build:
+      context: .
+      target: runner
+    command: ["node", "scripts/reminder-worker.mjs"]
+    restart: unless-stopped
+    environment:
+      APP_URL: http://app:3000
+      APP_TIMEZONE: Europe/Istanbul
+      REMINDER_JOB_SECRET: ${REMINDER_JOB_SECRET:?Set a separate random REMINDER_JOB_SECRET of at least 32 characters}
+      REMINDER_INTERVAL_MS: ${REMINDER_INTERVAL_MS:-60000}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  inbound:
+    image: santa-development-app:local
+    build:
+      context: .
+      target: runner
+    command: ["node", "scripts/inbound-worker.mjs"]
+    restart: unless-stopped
+    environment:
+      APP_URL: http://app:3000
+      REMINDER_JOB_SECRET: ${REMINDER_JOB_SECRET:?Set a separate random REMINDER_JOB_SECRET of at least 32 characters}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  proxy:
+    image: caddy:2-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./.local/https-authority:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+  encrypted-backup:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: scripts/ops/Dockerfile.backup
+    tmpfs:
+      - /snapshot:mode=0700
+    volumes:
+      - ./.local/backups/repository:/repository
+      - ./.local/backups/password:/run/secrets/restic-password:ro
+      - ./.env:/recovery/app.env:ro
+      - ./.local/db-tls:/recovery/db-tls:ro
+      - ./.local/https-authority:/recovery/https-authority:ro
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    environment:
+      PGHOST: db
+      PGDATABASE: santa
+      PGUSER: santa_migrate
+      PGPASSWORD: ${MIGRATION_DATABASE_PASSWORD:?Set MIGRATION_DATABASE_PASSWORD}
+      PGSSLROOTCERT: /certs/ca.crt
+      RESTIC_REPOSITORY: /repository
+      RESTIC_PASSWORD_FILE: /run/secrets/restic-password
+
+  backup:
+    image: postgres:16-alpine
+    profiles: ["tools"]
+    entrypoint: ["sh", "/project/scripts/db/backup.sh"]
+    volumes:
+      - ./scripts/db:/project/scripts/db:ro
+      - ./backups:/backups
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    environment:
+      PGHOST: db
+      PGDATABASE: santa
+      PGUSER: santa_migrate
+      PGPASSWORD: ${MIGRATION_DATABASE_PASSWORD:?Set MIGRATION_DATABASE_PASSWORD}
+      PGSSLROOTCERT: /certs/ca.crt
+
+  restore-test:
+    image: postgres:16-alpine
+    profiles: ["tools"]
+    entrypoint: ["sh", "/project/scripts/db/restore-test.sh"]
+    volumes:
+      - ./scripts/db:/project/scripts/db:ro
+      - ./prisma/runtime-grants.sql:/project/prisma/runtime-grants.sql:ro
+      - ./backups:/backups:ro
+      - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
+    environment:
+      PGHOST: db
+      PGDATABASE: santa
+      PGSSLROOTCERT: /certs/ca.crt
+      POSTGRES_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD}
+      APP_DATABASE_PASSWORD: ${APP_DATABASE_PASSWORD:?Set APP_DATABASE_PASSWORD}
+      MIGRATION_DATABASE_PASSWORD: ${MIGRATION_DATABASE_PASSWORD:?Set MIGRATION_DATABASE_PASSWORD}
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pgdata:

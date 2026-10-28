@@ -1,0 +1,15 @@
+node_modules
+.next
+coverage
+package-lock.json
+prisma/migrations
+design
+.agents
+.claude
+scripts/screenshot
+scripts/stitch
+tmp
+output
+
+.local/
+backups/

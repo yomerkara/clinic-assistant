@@ -1,0 +1,22 @@
+.next
+.git
+.gitignore
+design
+.agents
+.claude
+scripts/screenshot
+scripts/stitch
+tmp
+output
+.env
+.env.*
+!.env.example
+coverage
+node_modules
+
+
+# Database certificates, private keys and backups
+.local/
+backups/
+*.key
+*.dump

@@ -1,0 +1,314 @@
+.usage-ledger {
+  display: grid;
+  gap: 24px;
+}
+.usage-ledger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 0 6px;
+}
+.usage-ledger-head h2,
+.usage-ledger-head h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(26px, 3vw, 38px);
+  letter-spacing: -0.025em;
+}
+.usage-ledger-head p {
+  color: #63746b;
+  max-width: 650px;
+  margin: 0;
+  line-height: 1.6;
+}
+.usage-period-form {
+  flex-shrink: 0;
+}
+.usage-period-form label {
+  display: block;
+  font-size: 13px;
+  color: #5e7268;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.usage-period-form > div {
+  display: flex;
+  gap: 8px;
+}
+.usage-period-form input {
+  min-width: 170px;
+  max-width: 210px;
+  border: 1px solid #c5d5cb;
+  border-radius: 12px;
+  padding: 12px;
+  background: white;
+  color: #294a3b;
+  font: inherit;
+}
+.usage-total-band {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.15fr) 1fr;
+  gap: 32px;
+  padding: 32px;
+  border-radius: 20px;
+  background: #2f6652;
+  color: white;
+}
+.usage-total-band > div > span {
+  font-size: 14px;
+  opacity: 0.88;
+  display: block;
+  text-transform: capitalize;
+}
+.usage-total-band > div > strong {
+  font-size: clamp(35px, 4vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  display: block;
+  margin: 12px 0;
+  font-variant-numeric: tabular-nums;
+}
+.usage-total-band small {
+  display: block;
+  line-height: 1.6;
+  color: #d5e7dd;
+  max-width: 400px;
+}
+.usage-total-band dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+}
+.usage-total-band dt {
+  font-size: 12px;
+  color: #d5e7dd;
+  margin-bottom: 10px;
+}
+.usage-total-band dd {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.usage-ledger .usage-panel {
+  margin: 0;
+}
+.usage-task-list {
+  padding: 0 24px;
+}
+.usage-task-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+  padding: 20px 0;
+  border-bottom: 1px solid #e4eae5;
+}
+.usage-task-list > div:last-child {
+  border: 0;
+}
+.usage-task-list small,
+.usage-cell-meta {
+  display: block;
+  margin-top: 5px;
+  color: #5a6c61;
+  font-size: 13px;
+}
+.usage-task-list > div > div:last-child {
+  text-align: right;
+}
+.usage-state {
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #eef4ef;
+  color: #37654c;
+  white-space: nowrap;
+}
+.usage-panel-note {
+  padding: 0 24px 20px;
+  margin: 0;
+  color: #63746b;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.usage-detail-link {
+  color: #2f6652;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.usage-trace-page {
+  max-width: 1200px;
+  margin: auto;
+  padding: 28px 28px 60px;
+  display: grid;
+  gap: 24px;
+}
+.usage-trace-timeline {
+  display: grid;
+  gap: 16px;
+}
+.usage-turn {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #dae4dc;
+  border-radius: 16px;
+  padding: 22px;
+  min-width: 0;
+}
+.usage-turn--outbound {
+  background: #eaf3ed;
+  border-color: #c9dfd0;
+  margin-left: 44px;
+}
+.usage-turn > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #466354;
+  font-size: 13px;
+}
+.usage-turn time {
+  color: #6c7c73;
+  font-size: 12px;
+}
+.usage-turn-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin: 14px 0 4px;
+}
+.usage-trace-step {
+  margin-top: 14px;
+  border-top: 1px solid #e0e8e2;
+}
+.usage-trace-step summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.usage-trace-step summary::before {
+  content: "+";
+  color: #35694f;
+  font-size: 20px;
+}
+.usage-trace-step[open] summary::before {
+  content: "−";
+}
+.usage-trace-step summary > span:first-of-type {
+  flex: 1;
+}
+.usage-trace-step summary small {
+  display: block;
+  margin-top: 5px;
+  color: #62766a;
+}
+.usage-trace-step summary strong {
+  display: block;
+  text-align: right;
+  margin-top: 5px;
+}
+.usage-trace-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 440px;
+  overflow: auto;
+  padding: 18px;
+  margin: 0 0 12px;
+  background: #f4f6f2;
+  border: 1px solid #e2e8df;
+  border-radius: 10px;
+  font:
+    13px/1.65 ui-monospace,
+    SFMono-Regular,
+    monospace;
+  color: #2c4336;
+}
+.usage-ledger a:focus-visible,
+.usage-trace-page a:focus-visible,
+.usage-trace-step summary:focus-visible {
+  outline: 3px solid #91b99f;
+  outline-offset: 4px;
+}
+@media (max-width: 1050px) {
+  .usage-total-band {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .usage-ledger-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .usage-task-list > div {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+  .usage-task-list > div > div:last-child {
+    grid-column: 1/-1;
+    text-align: left;
+  }
+}
+@media (max-width: 600px) {
+  .usage-trace-page {
+    padding: 18px 12px 40px;
+  }
+  .usage-total-band {
+    padding: 24px;
+  }
+  .usage-turn {
+    padding: 16px;
+  }
+  .usage-turn--outbound {
+    margin-left: 12px;
+  }
+  .usage-trace-step summary {
+    flex-wrap: wrap;
+  }
+  .usage-trace-step summary > span:last-child {
+    width: 100%;
+    padding-left: 22px;
+  }
+  .usage-trace-step summary strong {
+    display: inline;
+    margin-left: 10px;
+  }
+  .usage-turn > header {
+    align-items: flex-start;
+  }
+}
+/* The settings content is narrower than the viewport because of both sidebars. */
+.usage-ledger {
+  container-type: inline-size;
+}
+.usage-total-band dd {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+@container (max-width: 950px) {
+  .usage-total-band {
+    grid-template-columns: 1fr;
+  }
+}
+.usage-ledger .usage-panel,
+.usage-trace-page .usage-panel {
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .usage-total-band dd {
+    font-size: 18px;
+  }
+}
+
+.usage-ledger .usage-table th,
+.usage-trace-page .usage-table th {
+  position: relative;
+}

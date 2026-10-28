@@ -1,0 +1,25 @@
+{
+  "output_mode": "html",
+  "mode": "auto",
+  "renderer": "stitch",
+  "spec_paths": [
+    "spec.md",
+    "SPEC.md",
+    "docs/spec.md",
+    "ARCHITECTURE.md",
+    "docs/architecture.md",
+    "docs/ARCHITECTURE.md",
+    "README.md"
+  ],
+  "jira": {
+    "default_jql": ""
+  },
+  "figma": {
+    "width": 1280,
+    "height": 720,
+    "theme": "light"
+  },
+  "stitch": {
+    "project_id": "15187094849042920980"
+  }
+}

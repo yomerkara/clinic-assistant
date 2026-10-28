@@ -1,0 +1,34 @@
+.reportFilter {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 28px 0 22px;
+}
+
+.dateField {
+  display: grid;
+  gap: 8px;
+  width: 224px;
+  min-width: 0;
+}
+
+.dateField > span {
+  color: #526b60;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+@media (max-width: 520px) {
+  .dateField {
+    width: 100%;
+  }
+
+  .reportFilter .submit {
+    width: 100%;
+  }
+}
+
+.dateField > :last-child { width: 100%; }
+.submit { flex-shrink: 0; }

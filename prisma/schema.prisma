@@ -1,0 +1,481 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  INTERN
+  THERAPIST
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW_REVIEW
+}
+
+enum ConversationMode {
+  BOT
+  HUMAN
+}
+
+enum ActionType {
+  CONFIRM
+  CANCEL
+  RESCHEDULE
+  NEW_BOOKING
+  THERAPIST_CHANGE
+  PRICE_REQUEST
+  INVOICE_REQUEST
+}
+
+enum ActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUTO_APPLIED
+  NEEDS_RECHECK
+  EXPIRED
+}
+
+enum KnowledgeApprovalStatus {
+  DRAFT
+  APPROVED
+  ARCHIVED
+}
+
+enum ConsentStatus {
+  UNKNOWN
+  GRANTED
+  WITHDRAWN
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageAuthorKind {
+  PATIENT
+  BOT
+  STAFF
+}
+
+model User {
+  serviceTasks ServiceRequest[]
+  conversationReads ConversationRead[]
+  id                    String    @id @default(cuid())
+  role                  Role
+  name                  String
+  email                 String    @unique
+  mfaEnabledAt          DateTime?
+  totpSecretEncrypted   String?
+  totpPendingEncrypted  String?
+  totpLastCounter       Int?
+  recoveryCodeHashes    String[]  @default([])
+  username              String?   @unique
+  emailVerifiedAt       DateTime?
+  phone                 String?
+  mustChangePassword    Boolean   @default(true)
+  passwordChangedAt     DateTime?
+  passwordExpiresAt     DateTime?
+  passwordHash          String
+  active                Boolean   @default(true)
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+
+  therapistProfile      TherapistProfile?
+  securityTokens        SecurityToken[]
+  sessions              Session[]
+  reviewedActions       ActionRequest[]     @relation("ReviewedBy")
+  assignedConversations Conversation[]      @relation("AssignedTo")
+  auditEvents           AuditEvent[]
+  notifications         Notification[]
+  simulationThread      SimulationThread?
+  calendarConnection    CalendarConnection?
+  modelUsage            ModelUsage[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model TherapistProfile {
+  id            String                  @id @default(cuid())
+  userId        String                  @unique
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName   String
+  specialties   String[]
+  calendarId    String?
+  active        Boolean                 @default(true)
+  appointments  Appointment[]
+  workingBlocks TherapistWorkingBlock[]
+  modelUsage     ModelUsage[]
+}
+
+model Patient {
+  guardianName String?
+  guardianConsent Boolean?
+  guardianAccompanies Boolean?
+  version             Int            @default(0)
+  id                  String         @id @default(cuid())
+  phone               String
+  displayName         String
+  age                 Int?
+  hasTherapyHistory   Boolean?
+  availabilityNotes   String?
+  alternativeDaysOkay Boolean?
+  consentStatus       ConsentStatus  @default(UNKNOWN)
+  createdAt           DateTime       @default(now())
+  appointments        Appointment[]
+  conversations       Conversation[]
+
+  @@index([phone])
+}
+
+model Appointment {
+  sessionMode String @default("IN_PERSON")
+  meetingUrl String?
+  meetingSentAt DateTime?
+  completedAutomaticallyAt DateTime?
+  version         Int               @default(0)
+  id              String            @id @default(cuid())
+  patientId       String
+  therapistId     String
+  calendarEventId String?
+  startAt         DateTime
+  endAt           DateTime
+  status          AppointmentStatus @default(SCHEDULED)
+  source          String            @default("manual")
+  reminderSentAt  DateTime?
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  therapist       TherapistProfile  @relation(fields: [therapistId], references: [id])
+  actionRequests  ActionRequest[]
+  notes           AppointmentNote[]
+
+  @@index([therapistId, startAt])
+  @@index([patientId, startAt])
+}
+
+model AppointmentNote {
+  id            String      @id @default(cuid())
+  appointmentId String
+  messageId     String?     @unique
+  text          String
+  calendarSyncedAt DateTime?
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  message       Message?    @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId, createdAt])
+}
+
+enum BookingStage {
+  GREETING
+  INTAKE
+  THERAPIST_PREFERENCE
+  AVAILABILITY
+  SLOT_SELECTION
+  PENDING_APPROVAL
+  CONFIRMED
+}
+
+model InboundBuffer {
+  conversationId String @id
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  firstAt DateTime
+  dueAt DateTime
+  revision Int @default(1)
+  leaseToken String?
+  leaseUntil DateTime?
+  attempts Int @default(0)
+  demoAdminUserId String?
+  @@index([dueAt])
+}
+
+model Conversation {
+  readMarkers ConversationRead[]
+  sessionMode String @default("IN_PERSON")
+  serviceRequests ServiceRequest[]
+  appointmentSelection Json?
+  sessionModeConfirmed Boolean @default(false)
+  bookingPurpose String? // NEW keeps any existing appointments unchanged.
+  pendingAppointmentNote Json?
+  bookingParty Json?
+  bookingStage BookingStage @default(GREETING)
+  offeredSlots String[] @default([])
+  offeredAt DateTime?
+  offeredTherapistId String?
+  inboundBuffer InboundBuffer?
+  preferredTherapistId String?
+  id             String           @id @default(cuid())
+  patientId      String
+  phone          String
+  mode           ConversationMode @default(BOT)
+  assignedToId   String?
+  lastMessageAt  DateTime         @default(now())
+  handoffReason  String?
+  memorySummary  String?
+  source         String           @default("whatsapp")
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  assignedTo     User?            @relation("AssignedTo", fields: [assignedToId], references: [id])
+  messages       Message[]
+  actionRequests ActionRequest[]
+  modelUsage     ModelUsage[]
+}
+
+model ServiceRequest {
+  progress String @default("NEW")
+  ownerId String?
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  followUpAt DateTime?
+  lastCheckedAt DateTime?
+  lastCheckResult String?
+  workflow Json?
+  notificationSentAt DateTime?
+  id String @id @default(cuid())
+  conversationId String
+  messageId String
+  kind String
+  summary String
+  status String @default("OPEN")
+  resolution String?
+  resolvedById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@unique([messageId, kind])
+  @@index([status, createdAt])
+}
+
+model ModelUsage {
+  id               String             @id @default(cuid())
+  userId           String?
+  therapistId      String?
+  conversationId   String?
+  provider         String
+  model            String
+  inputTokens      Int                @default(0)
+  outputTokens     Int                @default(0)
+  totalTokens      Int                @default(0)
+  estimatedCostUsd Float              @default(0)
+  tier             String             @default("LEGACY")
+  tariffVersion    String             @default("legacy")
+  billedCostUsd    Decimal?           @db.Decimal(18, 8)
+  pricingSnapshot  Json?
+  createdAt        DateTime           @default(now())
+  user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  therapist        TherapistProfile?  @relation(fields: [therapistId], references: [id], onDelete: SetNull)
+  conversation     Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([therapistId, createdAt])
+  @@index([conversationId])
+}
+
+model Message {
+  processedAt DateTime?
+  id                String            @id @default(cuid())
+  conversationId    String
+  direction         MessageDirection
+  authorKind        MessageAuthorKind
+  text              String
+  providerMessageId String?           @unique
+  redacted          Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  conversation      Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  intentDecision    IntentDecision?
+  appointmentNote   AppointmentNote?
+  @@index([conversationId, processedAt, createdAt])
+}
+
+model IntentDecision {
+  id                String  @id @default(cuid())
+  messageId         String  @unique
+  intent            String
+  confidence        Float
+  extractedEntities Json
+  modelVersion      String
+  message           Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model FaqAnswerCache {
+  id                 String   @id @default(cuid())
+  normalizedQuestion String   @unique
+  answer             String
+  intent             String
+  knowledgeDocId     String?
+  knowledgeVersion   Int?
+  hits               Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model CancellationDelivery {
+  actionId         String @id
+  action           ActionRequest @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  calendarEventId  String?
+  calendarId       String?
+  ownerUserId      String
+  attempts         Int @default(0)
+  nextAttemptAt    DateTime @default(now())
+  leaseToken       String?
+  leaseUntil       DateTime?
+  calendarSyncedAt DateTime?
+  completedAt      DateTime?
+  lastError        String?
+  createdAt        DateTime @default(now())
+
+  @@index([completedAt, nextAttemptAt])
+}
+
+model ActionRequest {
+  cancellationDelivery CancellationDelivery?
+  id              String        @id @default(cuid())
+  type            ActionType
+  appointmentId   String?
+  conversationId  String?
+  proposedChanges Json
+  status          ActionStatus  @default(PENDING)
+  requestedBy     String        @default("patient")
+  reviewedById    String?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
+  conversation    Conversation? @relation(fields: [conversationId], references: [id])
+  reviewedBy      User?         @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([status, createdAt])
+  @@index([appointmentId, status])
+}
+
+model KnowledgeDocument {
+  id             String                  @id @default(cuid())
+  title          String
+  content        String
+  source         String
+  sourceUrl      String?
+  contentHash    String?
+  pendingContent String?
+  pendingHash    String?
+  lastSyncedAt   DateTime?
+  approvalStatus KnowledgeApprovalStatus @default(DRAFT)
+  version        Int                     @default(1)
+  createdAt      DateTime                @default(now())
+}
+
+model CalendarConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String   @default("google")
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  calendarId   String   @default("primary")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TherapistWorkingBlock {
+  id          String           @id @default(cuid())
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  @@index([therapistId, weekday])
+}
+
+model Notification {
+  id             String                     @id @default(cuid())
+  recipientId    String
+  type           String
+  payload        Json
+  deliveryStatus NotificationDeliveryStatus @default(PENDING)
+  createdAt      DateTime                   @default(now())
+  recipient      User                       @relation(fields: [recipientId], references: [id])
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+}
+
+model SimulationThread {
+  id          String   @id @default(cuid())
+  adminUserId String   @unique
+  admin       User     @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  conditions  Json
+  turns       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClinicSettings {
+  id                   String   @id @default("default")
+  aiModelId            String?
+  monthlyUsageLimitUsd Float    @default(50)
+  usageResetAt         DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model SecurityToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  kind       String
+  target     String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, kind])
+}
+
+model AuthRateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+
+model ConversationRead {
+  userId String
+  conversationId String
+  readThroughAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@id([userId, conversationId])
+}
