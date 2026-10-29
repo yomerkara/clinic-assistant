@@ -20,7 +20,8 @@ type Props = {
     | "usage"
     | "settings"
     | "invoices"
-    | "requests";
+    | "requests"
+    | "statistics";
   pendingCount?: number;
   children: ReactNode;
 };
@@ -33,6 +34,7 @@ const nav = [
   { key: "calendar", href: "/calendar", label: "Takvim", icon: "calendar", flag: "screen.calendar" },
   { key: "requests", href: "/requests", label: "Çalışan talepleri", icon: "check", flag: "screen.requests" },
   { key: "invoices", href: "/invoices", label: "Faturalar", icon: "chart", flag: "screen.invoices" },
+  { key: "statistics", href: "/statistics", label: "İstatistik", icon: "chart", flag: "screen.statistics" },
 ] as const;
 
 export async function AdminShell({ user, active, pendingCount = 0, children }: Props) {
@@ -42,6 +44,8 @@ export async function AdminShell({ user, active, pendingCount = 0, children }: P
     if (item.flag && !flags[item.flag]) return item.key === active;
     if (item.key === "calendar")
       return user.role === "ADMIN" || user.role === "THERAPIST";
+    // Clinic-wide figures are a manager view; the page enforces this too.
+    if (item.key === "statistics") return user.role === "ADMIN";
     return true;
   });
   return (

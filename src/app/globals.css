@@ -9041,3 +9041,51 @@ body:has(.page-loading-overlay) .admin-shell { filter:blur(5px); }
   color: #5e6a63;
   font-size: 11px;
 }
+
+/* Statistics: one tile per figure, readable on a phone. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+.stat-tile {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+  background: #fff;
+}
+.stat-tile__label {
+  color: #5c6a63;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.stat-tile__value {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1;
+  color: #21372f;
+}
+.stat-tile small {
+  color: #5c6a63;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.stat-change {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c6a63;
+}
+.stat-change--up {
+  color: #2f6b4f;
+}
+.stat-change--down {
+  color: #8d3a30;
+}
+.table-scroll {
+  overflow-x: auto;
+}
