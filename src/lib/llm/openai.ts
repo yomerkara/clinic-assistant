@@ -45,7 +45,9 @@ export class OpenAiLlm implements LlmPort {
     return {};
   }
 
-  async understand(input: UnderstandingInput) {
+  /** `extraSystem` lets a second pass narrow the task without a second prompt
+   *  copy; the schema and evidence rules stay identical. */
+  async understand(input: UnderstandingInput, extraSystem?: string) {
     const started = Date.now();
     const base = (this.options.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");
     const response = await (this.options.fetchImpl ?? fetch)(`${base}/chat/completions`, {
@@ -63,7 +65,10 @@ export class OpenAiLlm implements LlmPort {
         messages: [
           {
             role: "system",
-            content: UNDERSTANDING_PROMPT + uiReviewExamples(input.inbound).text,
+            content:
+              UNDERSTANDING_PROMPT +
+              uiReviewExamples(input.inbound).text +
+              (extraSystem ? `\n${extraSystem}` : ""),
           },
           { role: "user", content: JSON.stringify(privateModelInput(input)) },
         ],

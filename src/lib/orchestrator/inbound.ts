@@ -5,6 +5,7 @@ import {
 } from "@/lib/settings/control";
 import { loadClinicControls } from "@/lib/settings/service";
 import { serviceFailureReply } from "@/lib/conversation/service-failure";
+import { reviewUncoveredContext } from "@/lib/conversation/second-pass";
 import {
   CALENDAR_FAILURE_REPLY,
   calendarFailureHandoffReason,
@@ -1589,7 +1590,7 @@ export async function handleInbound(input: {
     };
     simplePlan = simple ? planSimpleFlow(planningInput) : undefined;
     if (simplePlan) {
-      const interpretation = await observeUnderstanding({
+      let interpretation = await observeUnderstanding({
         source: input.source,
         conversationId: conversation.id,
         messageId: inboundMessage.id,
@@ -1605,6 +1606,27 @@ export async function handleInbound(input: {
         codeTurn: simplePlan.result.turn,
       });
       await input.ensureCurrent?.();
+      // Second pass: whatever the first reading never quoted gets one more look,
+      // optionally from a stronger model. It can only add interpretation.
+      const reviewed = interpretation
+        ? await reviewUncoveredContext({
+            enabled: controls.flags["assistant.secondPassReview"],
+            inbound: text,
+            history: safetyHistory,
+            stage: conversation.bookingStage,
+            known: {
+              name: patient.displayName,
+              age: patient.age,
+              hasTherapyHistory: patient.hasTherapyHistory,
+            },
+            nowIso: now.toISOString(),
+            first: interpretation,
+            conversationId: conversation.id,
+            messageId: inboundMessage.id,
+          })
+        : null;
+      await input.ensureCurrent?.();
+      if (reviewed) interpretation = reviewed.understanding;
       if (interpretation) {
         const codeTurn = simplePlan.result.turn;
         simplePlan = planSimpleFlow({ ...planningInput, interpretation });
@@ -1621,6 +1643,7 @@ export async function handleInbound(input: {
                   JSON.stringify(codeTurn) !== JSON.stringify(simplePlan.result.turn),
                 before: codeTurn,
                 after: simplePlan.result.turn,
+                secondPass: reviewed?.outcome,
               }),
             ),
           },
