@@ -2,11 +2,32 @@
 
 FROM node:22-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache openssl
+# On a network that terminates TLS (a corporate inspecting proxy), package and
+# engine downloads fail with "unable to get local issuer certificate" because
+# the container does not trust the proxy's root. The build therefore accepts an
+# optional CA bundle as a secret: supply EXTRA_CA_FILE to trust it, leave it out
+# and the build behaves exactly as before. The CA is never committed, and the
+# secret file itself is not copied into the image.
+# The CA must be trusted before the first network call, so it is appended to
+# the bundle apk and Node both read, ahead of any package download.
+RUN --mount=type=secret,id=extra_ca \
+    if [ -s /run/secrets/extra_ca ]; then \
+      cat /run/secrets/extra_ca >> /etc/ssl/certs/ca-certificates.crt; \
+    fi && \
+    apk add --no-cache openssl
+# Node keeps its own root store and would otherwise ignore the bundle above.
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 FROM base AS deps
+# npm's update notifier, audit and funding checks add network work that can make
+# `npm ci` fail inside a constrained build with "Exit handler never called!".
+# The download cache is mounted so a retry does not refetch every package.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_AUDIT=false
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --no-audit --no-fund --maxsockets 8
 
 # Runs once before the app; the web image never contains the Prisma CLI.
 FROM deps AS migrator

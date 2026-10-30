@@ -67,6 +67,8 @@ services:
     build:
       context: .
       target: migrator
+      secrets:
+        - extra_ca
     volumes:
       - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
     environment:
@@ -81,6 +83,8 @@ services:
     build:
       context: .
       target: runner
+      secrets:
+        - extra_ca
     volumes:
       - ${DB_TLS_DIR:-./.local/db-tls}/ca.crt:/certs/ca.crt:ro
     expose:
@@ -146,6 +150,8 @@ services:
     build:
       context: .
       target: runner
+      secrets:
+        - extra_ca
     command: ["node", "scripts/reminder-worker.mjs"]
     restart: unless-stopped
     environment:
@@ -164,6 +170,8 @@ services:
     build:
       context: .
       target: runner
+      secrets:
+        - extra_ca
     command: ["node", "scripts/inbound-worker.mjs"]
     restart: unless-stopped
     environment:
@@ -250,3 +258,10 @@ volumes:
   caddy_data:
   caddy_config:
   pgdata:
+
+# Optional: a CA bundle for networks that terminate TLS. Defaults to an empty
+# file, which leaves the build unchanged. Point EXTRA_CA_FILE at a PEM bundle
+# (for example .local/proxy-ca.crt) when builds fail certificate verification.
+secrets:
+  extra_ca:
+    file: ${EXTRA_CA_FILE:-/dev/null}
